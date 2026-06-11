@@ -125,101 +125,112 @@ img{user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 /* ============ MAPPA ============ */
 #mappa{
   position:fixed;inset:0;z-index:40;
-  background:linear-gradient(180deg,var(--fondo-2) 0%,var(--fondo) 100%);
+  background:var(--fondo);
   overflow:hidden;display:flex;
 }
 .mappa-quadro{
   flex-shrink:0;width:clamp(200px,26vw,400px);height:100%;
   background:var(--rocca-vert);background-size:cover;background-position:center top;
   border-right:3px solid var(--ottone);
-  box-shadow:inset -40px 0 50px -30px rgba(12,39,24,.55);
 }
 .mappa-colonna{
   flex:1;min-width:0;height:100%;
   display:flex;flex-direction:column;
-  padding:clamp(.7rem,2vh,1.4rem) clamp(1rem,2.5vw,2.2rem);
+  background:linear-gradient(180deg,#F2E6C8 0%,#E8D7AC 100%);
+  color:var(--inchiostro);
+  padding:clamp(.6rem,1.6vh,1.2rem) clamp(1rem,2.5vw,2.2rem);
 }
 .mappa-head{
   flex-shrink:0;display:flex;align-items:center;gap:.9rem;
-  padding-bottom:clamp(.4rem,1.2vh,.8rem);
-  border-bottom:1px solid rgba(201,155,63,.35);
+  padding-bottom:clamp(.35rem,1vh,.7rem);
+  border-bottom:1px solid rgba(122,87,32,.35);
 }
-.mappa-head svg.leone{width:clamp(40px,7vh,58px);height:auto;cursor:pointer;flex-shrink:0}
-.mappa-titolo{font-family:var(--display);font-size:clamp(1.3rem,3.6vh,2.1rem);line-height:1;color:var(--perg)}
-.mappa-sotto{font-family:var(--display);font-style:italic;color:var(--perg-scura);opacity:.85;font-size:clamp(.72rem,1.7vh,.92rem)}
-.logo-scuola-sm{width:clamp(40px,7vh,56px);height:auto;border-radius:8px;flex-shrink:0;border:1px solid rgba(201,155,63,.6);margin-left:auto}
+.leone-chip{
+  flex-shrink:0;background:var(--verde-cupo);border-radius:50%;
+  width:clamp(46px,8vh,64px);height:clamp(46px,8vh,64px);
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--ottone);box-shadow:0 2px 0 rgba(90,70,30,.3);
+}
+.mappa-head svg.leone{width:78%;height:auto;cursor:pointer}
+.mappa-titolo{font-family:var(--display);font-size:clamp(1.25rem,3.4vh,2rem);line-height:1;color:var(--inchiostro)}
+.mappa-sotto{font-family:var(--display);font-style:italic;color:#6B5A3E;font-size:clamp(.7rem,1.6vh,.9rem)}
+.logo-scuola-sm{width:clamp(38px,6.5vh,54px);height:auto;border-radius:8px;flex-shrink:0;border:1px solid rgba(122,87,32,.5);margin-left:auto}
 #badge-docente{
-  display:inline-block;margin-top:.25rem;
-  font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
-  border:1px solid var(--ottone-chiaro);color:var(--ottone-chiaro);
-  padding:.15rem .5rem;border-radius:3px;
+  display:inline-block;margin-top:.2rem;
+  font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid #8A6516;color:#8A6516;
+  padding:.12rem .45rem;border-radius:3px;
 }
 #zone-container{
-  flex:1;min-height:0;display:flex;flex-direction:column;
-  justify-content:space-evenly;padding-top:clamp(.2rem,.8vh,.5rem);
+  flex:1;min-height:0;
+  display:grid;grid-template-rows:repeat(5,1fr);
+  padding-top:clamp(.15rem,.6vh,.4rem);
 }
-.zona{min-width:0}
-.zona-head{display:flex;align-items:center;gap:.6rem;margin-bottom:clamp(.2rem,.7vh,.45rem)}
-.zona-head svg{width:clamp(20px,3.6vh,28px);height:clamp(20px,3.6vh,28px);flex-shrink:0}
-.zona-nome{font-family:var(--display);font-size:clamp(.95rem,2.4vh,1.3rem);color:var(--ottone-chiaro);white-space:nowrap}
-.zona-desc{font-size:clamp(.58rem,1.4vh,.74rem);color:var(--perg-scura);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.zona-linea{flex:1;height:1px;background:linear-gradient(90deg,var(--ottone) 0%,transparent 100%);opacity:.45;min-width:20px}
+.zona{min-height:0;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.zona-head{display:flex;align-items:center;gap:.55rem;margin-bottom:clamp(.15rem,.55vh,.35rem)}
+.zona-head svg{width:clamp(18px,3.2vh,26px);height:clamp(18px,3.2vh,26px);flex-shrink:0}
+.zona-nome{font-family:var(--display);font-size:clamp(.92rem,2.3vh,1.25rem);color:#8A6516;white-space:nowrap}
+.zona-desc{font-size:clamp(.56rem,1.35vh,.72rem);color:#6B5A3E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zona-linea{flex:1;height:1px;background:linear-gradient(90deg,#A8782D,transparent);opacity:.55;min-width:20px}
 .nodi{
-  position:relative;display:flex;gap:clamp(.6rem,1.8vw,1.6rem);
-  padding:0 clamp(.2rem,.6vw,.6rem);
+  position:relative;display:flex;gap:clamp(.7rem,2.2vw,2rem);
+  width:max-content;max-width:100%;
+  padding:0 clamp(.1rem,.4vw,.4rem);
 }
 .nodi::before{
   content:'';position:absolute;z-index:0;
-  left:clamp(20px,3.8vh,30px);right:clamp(20px,3.8vh,30px);
-  top:clamp(20px,3.8vh,30px);
-  border-top:2px dashed rgba(201,155,63,.4);
+  left:clamp(18px,3.2vh,27px);right:clamp(18px,3.2vh,27px);
+  top:clamp(18px,3.2vh,27px);
+  border-top:2px dashed rgba(122,87,32,.5);
 }
 .nodo-wrap{
   position:relative;z-index:1;
   display:flex;flex-direction:column;align-items:center;
-  width:clamp(64px,11vh,98px);
+  width:clamp(66px,11vw,110px);min-width:0;
 }
 .nodo{
-  width:clamp(40px,7.6vh,60px);height:clamp(40px,7.6vh,60px);
+  width:clamp(36px,6.4vh,54px);height:clamp(36px,6.4vh,54px);
   border-radius:50%;border:2px solid var(--ottone);
-  background:var(--perg);color:var(--verde);
+  background:#FBF3DC;color:var(--verde);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--display);font-size:clamp(1rem,2.8vh,1.5rem);
-  box-shadow:0 3px 0 rgba(0,0,0,.35);
+  font-family:var(--display);font-size:clamp(.95rem,2.6vh,1.4rem);
+  box-shadow:0 2px 0 rgba(90,70,30,.35);
   cursor:pointer;transition:transform .12s;padding:0;
 }
 .nodo:active{transform:translateY(2px)}
-.nodo.fatto{background:var(--ottone);color:#fff;border-color:var(--ottone-chiaro)}
-.nodo.prossimo{animation:pulsa 1.6s ease-out infinite}
+.nodo.fatto{background:var(--ottone);color:#fff;border-color:#8A6516}
+.nodo.prossimo{animation:pulsa 1.6s ease-out infinite;border-color:#8A6516;border-width:3px}
 @keyframes pulsa{
-  0%,100%{box-shadow:0 3px 0 rgba(0,0,0,.35), 0 0 0 0 rgba(201,155,63,.55)}
-  50%{box-shadow:0 3px 0 rgba(0,0,0,.35), 0 0 0 8px rgba(201,155,63,0)}
+  0%,100%{box-shadow:0 2px 0 rgba(90,70,30,.35), 0 0 0 0 rgba(168,120,45,.5)}
+  50%{box-shadow:0 2px 0 rgba(90,70,30,.35), 0 0 0 9px rgba(168,120,45,0)}
 }
-@media (prefers-reduced-motion:reduce){.nodo.prossimo{animation:none;border-color:var(--ottone-chiaro);border-width:3px}}
+@media (prefers-reduced-motion:reduce){.nodo.prossimo{animation:none}}
 .nodo.bloccato{
-  background:rgba(242,232,207,.13);color:rgba(231,216,180,.75);
-  border:2px dotted rgba(201,155,63,.55);
+  background:transparent;color:#A8956C;
+  border:2px dotted #A8956C;
   box-shadow:none;cursor:default;
 }
 .nodo-nome{
-  margin-top:.3rem;text-align:center;
-  font-size:clamp(.5rem,1.25vh,.64rem);line-height:1.15;font-weight:500;
-  color:var(--perg-scura);opacity:.85;
-  max-height:2.4em;overflow:hidden;
+  margin-top:.25rem;text-align:center;
+  font-size:clamp(.5rem,1.2vh,.63rem);line-height:1.12;font-weight:600;
+  color:#5A4D3B;max-height:2.3em;overflow:hidden;max-width:100%;
 }
-.nodo-wrap.bloccata .nodo-nome{opacity:.45}
+.nodo-wrap.bloccata .nodo-nome{color:#A8956C;font-weight:500}
 .mappa-footer{
   flex-shrink:0;display:flex;align-items:center;gap:.7rem;
-  margin-top:clamp(.3rem,1vh,.7rem);padding-top:clamp(.3rem,1vh,.6rem);
-  border-top:1px solid rgba(201,155,63,.3);
-  font-size:clamp(.54rem,1.3vh,.66rem);color:var(--perg-scura);opacity:.78;line-height:1.45;
+  margin-top:clamp(.25rem,.8vh,.6rem);padding-top:clamp(.25rem,.8vh,.55rem);
+  border-top:1px solid rgba(122,87,32,.35);
+  font-size:clamp(.52rem,1.25vh,.64rem);color:#6B5A3E;line-height:1.4;
 }
-.mappa-footer img{width:clamp(22px,4vh,30px);height:auto;flex-shrink:0}
+.mappa-footer img{width:clamp(20px,3.8vh,28px);height:auto;flex-shrink:0}
 @media (max-width:920px){
   #mappa{overflow:auto;display:block}
   .mappa-quadro{width:100%;height:140px;border-right:none;border-bottom:3px solid var(--ottone)}
   .mappa-colonna{height:auto}
+  #zone-container{display:flex;flex-direction:column;gap:1rem}
   .zona-desc,.zona-nome{white-space:normal}
+  .nodi{flex-wrap:wrap;width:auto}
+  .nodi::before{display:none}
 }
 
 /* ============ LIVELLO ============ */
@@ -516,11 +527,11 @@ img{user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 #btn-info:active{background:rgba(201,155,63,.25)}
 .info-link{
   margin-left:auto;flex-shrink:0;
-  background:transparent;border:1px solid rgba(201,155,63,.5);
-  color:var(--perg-scura);font-size:.62rem;font-weight:600;letter-spacing:.08em;
+  background:transparent;border:1px solid #8A6516;
+  color:#8A6516;font-size:.62rem;font-weight:600;letter-spacing:.08em;
   padding:.3rem .7rem;border-radius:4px;white-space:nowrap;
 }
-.info-link:active{background:rgba(201,155,63,.2)}
+.info-link:active{background:rgba(168,120,45,.15)}
 #info-docenti{
   position:fixed;inset:0;z-index:70;background:rgba(10,30,18,.88);
   display:flex;align-items:center;justify-content:center;padding:1.2rem;
@@ -708,7 +719,9 @@ button:focus-visible,.nodo:focus-visible,.chip:focus-visible{
   <div class="mappa-quadro" role="img" aria-label="La Rocca San Giorgio di Orzinuovi"></div>
   <div class="mappa-colonna">
     <div class="mappa-head">
-      <svg class="leone" id="logo-leone" aria-label="Leone di San Marco"><use href="#svg-leone"/></svg>
+      <div class="leone-chip">
+        <svg class="leone" id="logo-leone" aria-label="Leone di San Marco"><use href="#svg-leone"/></svg>
+      </div>
       <div>
         <div class="mappa-titolo">La Rocca Cifrata</div>
         <div class="mappa-sotto">Da Porta San Giorgio alla Rocca: venticinque incarichi, cinque luoghi del borgo.</div>
