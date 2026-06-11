@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>La Rocca Cifrata — Orzinuovi 1490</title>
+<!--
+  LA ROCCA CIFRATA - crittografia con coding testuale (stile CoffeeScript)
+  Progettazione: A. Cerioli - prototipo v1
+  ------------------------------------------------------------------
+  - Single file, vanilla HTML/CSS/JS. Nessuna dipendenza salvo Google Fonts.
+  - Mini-linguaggio "CIFRA": keyword inglesi (for/in/if), verbi italiani
+    (scrivi, anteponi, sposta, pari, dispari). NIENTE stringhe letterali:
+    impossibile copiare la risposta a mano. Validazione su test multipli.
+  - 10 livelli in 4 luoghi di Orzinuovi (Porta San Giorgio / Le Mura /
+    La Piazza / La Rocca), soluzioni verificate via simulatore Node.
+  - Nessun localStorage (Mac di laboratorio condivisi): progressi in memoria.
+  - Sblocco docente: 5 tap sul leone nella schermata mappa.
+  - Accesso diretto a un livello: ?livello=N
+  - Hook telemetria: funzione telemetria() vuota, pronta per Image pixel GET
+    -> Apps Script doGet(e) se servira' la dashboard docente.
+  - Errori sempre in ambra, mai rosso. L'errore e' parte del percorso.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde:#1B6D3F;
+  --verde-cupo:#14512F;
+  --fondo:#0C2718;
+  --fondo-2:#0F3120;
+  --perg:#F2E8CF;
+  --perg-scura:#E7D8B4;
+  --perg-bordo:#CBB987;
+  --inchiostro:#28211A;
+  --inchiostro-2:#5A4D3B;
+  --ottone:#A8782D;
+  --ottone-chiaro:#C99B3F;
+  --ambra:#B5731A;
+  --ambra-fondo:#F6E9CE;
+  --ok:#1B6D3F;
+  --display:'IM Fell English',serif;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--fondo);
+  color:var(--perg);
+  overflow:hidden;
+}
+button{font-family:var(--sans);cursor:pointer}
+.hidden{display:none !important}
+
+/* ============ SPLASH ============ */
+#splash{
+  position:fixed;inset:0;z-index:50;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,var(--fondo-2) 0%,var(--fondo) 65%);
+  text-align:center;padding:2rem;
+}
+.splash-super{
+  font-size:clamp(.7rem,1.1vw,.85rem);letter-spacing:.32em;
+  text-transform:uppercase;color:var(--ottone-chiaro);margin-bottom:1.6rem;
+}
+#splash svg.leone{width:clamp(110px,16vw,170px);height:auto;margin-bottom:1.4rem}
+.splash-title{
+  font-family:var(--display);font-weight:400;
+  font-size:clamp(2.6rem,6.5vw,5rem);line-height:1.02;
+  color:var(--perg);
+}
+.splash-title em{font-style:italic;color:var(--ottone-chiaro)}
+.splash-sub{
+  font-family:var(--display);font-style:italic;
+  font-size:clamp(1rem,1.9vw,1.35rem);
+  color:var(--perg-scura);opacity:.85;margin-top:1rem;max-width:34em;
+}
+#btn-entra{
+  margin-top:2.4rem;
+  background:var(--ottone);color:#fff;border:none;
+  font-size:clamp(.95rem,1.4vw,1.1rem);font-weight:600;letter-spacing:.06em;
+  padding:.95rem 2.6rem;border-radius:4px;
+  box-shadow:0 4px 0 #7A5720;
+  transition:transform .12s,box-shadow .12s;
+}
+#btn-entra:active{transform:translateY(3px);box-shadow:0 1px 0 #7A5720}
+.splash-credit{
+  position:absolute;bottom:1.2rem;font-size:.7rem;letter-spacing:.12em;
+  color:var(--perg-scura);opacity:.45;text-transform:uppercase;
+}
+
+/* ============ MAPPA ============ */
+#mappa{
+  position:fixed;inset:0;z-index:40;
+  background:linear-gradient(180deg,var(--fondo-2) 0%,var(--fondo) 100%);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.mappa-inner{max-width:760px;margin:0 auto;padding:2.2rem 1.4rem 4rem}
+.mappa-head{display:flex;align-items:center;gap:1rem;margin-bottom:.6rem}
+.mappa-head svg.leone{width:58px;height:auto;flex-shrink:0;cursor:pointer}
+.mappa-titolo{font-family:var(--display);font-size:clamp(1.7rem,4vw,2.4rem);line-height:1}
+.mappa-sotto{font-family:var(--display);font-style:italic;color:var(--perg-scura);opacity:.8;font-size:clamp(.9rem,1.6vw,1.05rem)}
+#badge-docente{
+  display:inline-block;margin-top:.6rem;
+  font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid var(--ottone-chiaro);color:var(--ottone-chiaro);
+  padding:.25rem .7rem;border-radius:3px;
+}
+.zona{margin-top:2.2rem}
+.zona-head{display:flex;align-items:center;gap:.8rem;margin-bottom:1rem}
+.zona-head svg{width:34px;height:34px;flex-shrink:0}
+.zona-nome{font-family:var(--display);font-size:clamp(1.15rem,2.4vw,1.5rem);color:var(--ottone-chiaro)}
+.zona-desc{font-size:.8rem;color:var(--perg-scura);opacity:.75}
+.zona-linea{flex:1;height:1px;background:linear-gradient(90deg,var(--ottone) 0%,transparent 100%);opacity:.45}
+.nodi{display:flex;flex-wrap:wrap;gap:.9rem}
+.nodo{
+  width:96px;min-height:96px;border-radius:8px;
+  background:var(--perg);color:var(--inchiostro);
+  border:1px solid var(--perg-bordo);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.3rem;padding:.5rem .35rem;text-align:center;
+  font-size:.68rem;line-height:1.15;font-weight:500;
+  box-shadow:0 3px 0 rgba(0,0,0,.35);
+  transition:transform .12s;cursor:pointer;border:none;
+}
+.nodo:active{transform:translateY(2px)}
+.nodo .num{
+  font-family:var(--display);font-size:1.5rem;line-height:1;
+  color:var(--verde);
+}
+.nodo.fatto .num{color:var(--ottone)}
+.nodo.fatto{background:var(--perg-scura)}
+.nodo.bloccato{
+  background:transparent;color:var(--perg-scura);
+  border:1px dashed rgba(231,216,180,.35);box-shadow:none;
+  cursor:default;opacity:.55;
+}
+.nodo.bloccato .num{color:var(--perg-scura);opacity:.6}
+.nodo svg.mini-sigillo{width:20px;height:20px}
+
+/* ============ LIVELLO ============ */
+#livello{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column}
+#liv-head{
+  background:var(--verde-cupo);
+  border-bottom:2px solid var(--ottone);
+  padding:.65rem 1.2rem;
+  display:flex;align-items:center;gap:1rem;flex-shrink:0;
+}
+#liv-head .zona-tag{
+  font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ottone-chiaro);
+}
+#liv-head .liv-nome{font-family:var(--display);font-size:clamp(1.05rem,2vw,1.4rem);line-height:1.05}
+.head-spacer{flex:1}
+.btn-fantasma{
+  background:transparent;border:1px solid rgba(242,232,207,.4);
+  color:var(--perg);font-size:.78rem;font-weight:500;letter-spacing:.06em;
+  padding:.45rem 1rem;border-radius:4px;white-space:nowrap;
+}
+.btn-fantasma:active{background:rgba(242,232,207,.12)}
+
+#liv-corpo{
+  flex:1;display:grid;grid-template-columns:minmax(330px,460px) 1fr;
+  gap:0;overflow:hidden;
+}
+@media (max-width:880px){
+  #liv-corpo{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow-y:auto;display:block}
+  #pann-dispaccio,#pann-lavoro{height:auto !important;overflow:visible !important}
+  body{overflow:auto}
+  #livello{position:static;min-height:100%}
+}
+
+/* --- pannello dispaccio (pergamena) --- */
+#pann-dispaccio{
+  background:var(--perg);color:var(--inchiostro);
+  border-right:6px double var(--ottone);
+  padding:1.4rem 1.5rem 2rem;overflow-y:auto;height:100%;
+  -webkit-overflow-scrolling:touch;
+}
+.disp-mittente{
+  font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ottone);margin-bottom:.5rem;
+}
+.disp-testo{
+  font-family:var(--display);font-size:clamp(1rem,1.5vw,1.13rem);
+  line-height:1.45;color:var(--inchiostro);
+}
+.disp-testo em{font-style:italic;color:var(--verde)}
+.blocco-msg{
+  margin-top:1.1rem;background:rgba(27,109,63,.07);
+  border:1px solid var(--perg-bordo);border-radius:6px;
+  padding:.8rem .9rem;
+}
+.blocco-msg .eti{
+  font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--inchiostro-2);margin-bottom:.35rem;
+}
+.blocco-msg .val{
+  font-family:var(--mono);font-size:clamp(.82rem,1.3vw,.95rem);
+  word-break:break-all;line-height:1.5;
+}
+.blocco-msg .val.atteso{color:var(--verde);font-weight:600}
+.chiave-pill{
+  display:inline-block;margin-left:.5rem;
+  font-family:var(--mono);font-size:.75rem;font-weight:600;
+  background:var(--ottone);color:#fff;border-radius:3px;padding:.08rem .45rem;
+}
+#freq-pann{margin-top:1.1rem}
+#freq-pann .eti{
+  font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--inchiostro-2);margin-bottom:.5rem;
+}
+.freq-riga{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem}
+.freq-lettera{font-family:var(--mono);font-weight:600;width:1.1em}
+.freq-barra{height:10px;background:var(--verde);border-radius:2px;opacity:.85}
+.freq-n{font-family:var(--mono);font-size:.7rem;color:var(--inchiostro-2)}
+.nuovo-comando{
+  margin-top:1.3rem;border-top:1px solid var(--perg-bordo);padding-top:1rem;
+}
+.nuovo-comando .eti{
+  font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ottone);margin-bottom:.4rem;font-weight:600;
+}
+.nuovo-comando p{font-size:.85rem;line-height:1.5;color:var(--inchiostro)}
+.nuovo-comando code{
+  font-family:var(--mono);font-size:.82rem;background:rgba(27,109,63,.1);
+  padding:.05rem .3rem;border-radius:3px;
+}
+
+/* --- pannello lavoro --- */
+#pann-lavoro{
+  display:flex;flex-direction:column;height:100%;overflow-y:auto;
+  padding:1.2rem 1.4rem 2rem;gap:.9rem;
+  -webkit-overflow-scrolling:touch;
+}
+.lav-eti{
+  font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--perg-scura);opacity:.8;
+}
+#chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.chip{
+  font-family:var(--mono);font-size:.76rem;
+  background:rgba(242,232,207,.08);color:var(--perg);
+  border:1px solid rgba(242,232,207,.3);border-radius:4px;
+  padding:.35rem .6rem;
+}
+.chip:active{background:rgba(201,155,63,.25);border-color:var(--ottone-chiaro)}
+#editor{
+  width:100%;min-height:170px;resize:vertical;
+  font-family:var(--mono);font-size:clamp(.92rem,1.4vw,1.05rem);line-height:1.6;
+  background:#0A2013;color:var(--perg);
+  border:1px solid rgba(201,155,63,.45);border-radius:6px;
+  padding:.85rem 1rem;outline:none;
+  caret-color:var(--ottone-chiaro);
+}
+#editor:focus{border-color:var(--ottone-chiaro)}
+.lav-btns{display:flex;gap:.7rem;align-items:center}
+#btn-esegui{
+  background:var(--ottone);color:#fff;border:none;
+  font-size:.95rem;font-weight:600;letter-spacing:.05em;
+  padding:.7rem 1.8rem;border-radius:4px;
+  box-shadow:0 3px 0 #7A5720;transition:transform .1s,box-shadow .1s;
+}
+#btn-esegui:active{transform:translateY(2px);box-shadow:0 1px 0 #7A5720}
+#btn-rientra{
+  background:transparent;border:1px solid rgba(242,232,207,.4);color:var(--perg);
+  font-family:var(--mono);font-size:.8rem;padding:.65rem 1rem;border-radius:4px;
+}
+#btn-rientra:active{background:rgba(242,232,207,.12)}
+#conta-righe{font-size:.72rem;color:var(--perg-scura);opacity:.7;margin-left:auto}
+
+#errore{
+  background:var(--ambra-fondo);color:var(--inchiostro);
+  border-left:5px solid var(--ambra);border-radius:4px;
+  padding:.8rem 1rem;font-size:.86rem;line-height:1.45;
+}
+#errore .err-riga{
+  font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ambra);font-weight:600;margin-bottom:.2rem;
+}
+
+#esiti{display:flex;flex-direction:column;gap:.55rem}
+.esito{
+  background:rgba(242,232,207,.06);border:1px solid rgba(242,232,207,.18);
+  border-radius:6px;padding:.6rem .8rem;
+  font-family:var(--mono);font-size:.78rem;line-height:1.55;word-break:break-all;
+}
+.esito .et{
+  font-family:var(--sans);font-size:.6rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--perg-scura);opacity:.8;
+}
+.esito.ok{border-color:rgba(201,155,63,.6)}
+.esito .res-ok{color:var(--ottone-chiaro);font-weight:600}
+.esito .res-no{color:var(--ambra)}
+.esito svg{width:14px;height:14px;vertical-align:-2px;margin-right:.3rem}
+
+/* ============ VITTORIA ============ */
+#vittoria{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(10,30,18,.88);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+}
+.vitt-card{
+  background:var(--perg);color:var(--inchiostro);
+  border-radius:10px;max-width:430px;width:100%;
+  padding:2.2rem 2rem;text-align:center;
+  border:1px solid var(--perg-bordo);
+  box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+.vitt-card svg.sigillo{
+  width:104px;height:104px;margin-bottom:1rem;
+  animation:imprimi .55s cubic-bezier(.2,1.6,.4,1) both;
+}
+@keyframes imprimi{
+  0%{transform:scale(2.1) rotate(-14deg);opacity:0}
+  60%{transform:scale(.94) rotate(2deg);opacity:1}
+  100%{transform:scale(1) rotate(0)}
+}
+@media (prefers-reduced-motion:reduce){
+  .vitt-card svg.sigillo{animation:none}
+}
+.vitt-titolo{font-family:var(--display);font-size:1.9rem;line-height:1.05}
+.vitt-sotto{font-size:.9rem;line-height:1.5;color:var(--inchiostro-2);margin-top:.7rem}
+.vitt-sotto strong{color:var(--ottone)}
+.vitt-btns{display:flex;gap:.7rem;justify-content:center;margin-top:1.6rem;flex-wrap:wrap}
+.vitt-btns .btn-oro{
+  background:var(--ottone);color:#fff;border:none;font-weight:600;
+  font-size:.92rem;padding:.7rem 1.6rem;border-radius:4px;
+  box-shadow:0 3px 0 #7A5720;
+}
+.vitt-btns .btn-oro:active{transform:translateY(2px);box-shadow:0 1px 0 #7A5720}
+.vitt-btns .btn-perg{
+  background:transparent;border:1px solid var(--ottone);color:var(--ottone);
+  font-weight:500;font-size:.92rem;padding:.7rem 1.4rem;border-radius:4px;
+}
+button:focus-visible,.nodo:focus-visible,.chip:focus-visible{
+  outline:2px solid var(--ottone-chiaro);outline-offset:2px;
+}
+#editor:focus-visible{outline:none}
+</style>
+</head>
+<body>
+
+<!-- ============ SVG SYMBOLS ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<!-- Leone di San Marco, segno araldico stilizzato -->
+<symbol id="svg-leone" viewBox="0 0 120 90">
+  <g fill="none" stroke="#C99B3F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ala -->
+    <path d="M38 46 Q30 18 62 12 Q56 22 60 28 Q66 18 84 18 Q74 26 76 33 Q86 28 96 32"/>
+    <!-- corpo -->
+    <path d="M30 70 Q28 52 44 48 Q70 42 92 48 Q102 52 100 62 L96 70"/>
+    <!-- testa -->
+    <circle cx="103" cy="46" r="9"/>
+    <path d="M112 42 Q118 44 116 50"/>
+    <!-- zampe -->
+    <path d="M38 70 L38 78 M58 68 L58 78 M78 68 L78 78 M94 70 L94 78"/>
+    <!-- libro aperto sotto la zampa -->
+    <path d="M20 76 Q28 72 36 76 Q28 80 20 76 Z"/>
+  </g>
+  <!-- aureola -->
+  <circle cx="103" cy="36" r="13" fill="none" stroke="#A8782D" stroke-width="2"/>
+</symbol>
+<!-- Porta (arco) -->
+<symbol id="svg-porta" viewBox="0 0 40 40">
+  <g fill="none" stroke="#C99B3F" stroke-width="2.4" stroke-linecap="round">
+    <path d="M8 34 L8 18 Q8 8 20 8 Q32 8 32 18 L32 34"/>
+    <path d="M14 34 L14 20 Q14 14 20 14 Q26 14 26 20 L26 34"/>
+    <path d="M4 34 L36 34"/>
+  </g>
+</symbol>
+<!-- Mura merlate -->
+<symbol id="svg-mura" viewBox="0 0 40 40">
+  <g fill="none" stroke="#C99B3F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 34 L5 16 L10 16 L10 11 L15 11 L15 16 L20 16 L20 11 L25 11 L25 16 L30 16 L30 11 L35 11 L35 16 L35 34"/>
+    <path d="M5 34 L35 34"/>
+    <path d="M17 34 L17 26 Q20 23 23 26 L23 34"/>
+  </g>
+</symbol>
+<!-- Piazza (portici) -->
+<symbol id="svg-piazza" viewBox="0 0 40 40">
+  <g fill="none" stroke="#C99B3F" stroke-width="2.4" stroke-linecap="round">
+    <path d="M4 14 L20 5 L36 14"/>
+    <path d="M7 14 L7 34 M16 14 L16 34 M25 14 L25 34 M34 14 L34 34"/>
+    <path d="M7 20 Q11.5 16 16 20 M16 20 Q20.5 16 25 20 M25 20 Q29.5 16 34 20"/>
+    <path d="M4 34 L36 34"/>
+  </g>
+</symbol>
+<!-- Rocca (torre) -->
+<symbol id="svg-rocca" viewBox="0 0 40 40">
+  <g fill="none" stroke="#C99B3F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 34 L12 10 L16 10 L16 6 L18 6 L18 10 L22 10 L22 6 L24 6 L24 10 L28 10 L28 34"/>
+    <path d="M8 34 L32 34"/>
+    <path d="M18 34 L18 26 Q20 24 22 26 L22 34"/>
+    <circle cx="20" cy="17" r="2.2"/>
+  </g>
+</symbol>
+<!-- Sigillo di ceralacca -->
+<symbol id="svg-sigillo" viewBox="0 0 100 100">
+  <path fill="#A8782D" d="M50 4 Q66 2 76 12 Q92 16 92 34 Q100 46 92 60 Q94 78 76 84 Q66 98 50 94 Q32 98 24 84 Q6 80 10 60 Q0 48 10 34 Q10 14 28 12 Q38 2 50 4 Z"/>
+  <circle cx="50" cy="50" r="32" fill="none" stroke="#F2E8CF" stroke-width="2.5"/>
+  <g fill="none" stroke="#F2E8CF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 62 L40 44 L46 50 L50 40 L54 50 L60 44 L60 62 Z"/>
+  </g>
+</symbol>
+<!-- spunta -->
+<symbol id="svg-ok" viewBox="0 0 20 20">
+  <path fill="none" stroke="#C99B3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M4 11 L8.5 15.5 L16 5"/>
+</symbol>
+<!-- penna (ancora al lavoro) -->
+<symbol id="svg-penna" viewBox="0 0 20 20">
+  <path fill="none" stroke="#B5731A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 16 L5 12 L14 3 Q16 4 17 6 L8 15 Z M4 16 L7 15"/>
+</symbol>
+</defs>
+</svg>
+
+<!-- ============ SPLASH ============ -->
+<div id="splash">
+  <div class="splash-super">Orzinuovi · Fortezza della Serenissima · MCDXC</div>
+  <svg class="leone" aria-hidden="true"><use href="#svg-leone"/></svg>
+  <h1 class="splash-title">La Rocca <em>Cifrata</em></h1>
+  <p class="splash-sub">Messer Bartolomeo, cifrista della Rocca San Giorgio, cerca un apprendista.
+  I dispacci per Venezia non possono viaggiare in chiaro: imparerai a cifrarli scrivendo programmi.</p>
+  <button id="btn-entra" onclick="apriMappa()">Entra nella cancelleria</button>
+  <div class="splash-credit">Pensiero computazionale e crittografia · A. Cerioli</div>
+</div>
+
+<!-- ============ MAPPA ============ -->
+<div id="mappa" class="hidden">
+  <div class="mappa-inner">
+    <div class="mappa-head">
+      <svg class="leone" id="logo-leone" aria-label="Leone di San Marco"><use href="#svg-leone"/></svg>
+      <div>
+        <div class="mappa-titolo">La Rocca Cifrata</div>
+        <div class="mappa-sotto">Scegli un incarico. Ogni dispaccio sigillato apre il successivo.</div>
+        <div id="badge-docente" class="hidden">Modalità docente · tutti gli incarichi aperti</div>
+      </div>
+    </div>
+    <div id="zone-container"></div>
+  </div>
+</div>
+
+<!-- ============ LIVELLO ============ -->
+<div id="livello" class="hidden">
+  <div id="liv-head">
+    <div>
+      <div class="zona-tag" id="h-zona"></div>
+      <div class="liv-nome" id="h-nome"></div>
+    </div>
+    <div class="head-spacer"></div>
+    <button class="btn-fantasma" onclick="apriMappa()">Mappa</button>
+  </div>
+  <div id="liv-corpo">
+    <div id="pann-dispaccio">
+      <div class="disp-mittente">Dalla scrivania di Messer Bartolomeo</div>
+      <div class="disp-testo" id="d-testo"></div>
+      <div class="blocco-msg">
+        <div class="eti">Dispaccio in arrivo <span id="d-chiave"></span></div>
+        <div class="val" id="d-input"></div>
+      </div>
+      <div class="blocco-msg">
+        <div class="eti">Deve uscire così</div>
+        <div class="val atteso" id="d-atteso"></div>
+      </div>
+      <div id="freq-pann" class="hidden">
+        <div class="eti">Conteggio delle lettere nel dispaccio</div>
+        <div id="freq-righe"></div>
+        <p style="font-size:.78rem;line-height:1.5;color:var(--inchiostro-2);margin-top:.4rem">
+          In italiano le lettere più frequenti sono <strong>E</strong> e <strong>A</strong>.
+          Quale spostamento le riporta al loro posto?</p>
+      </div>
+      <div class="nuovo-comando" id="d-nuovo"></div>
+    </div>
+    <div id="pann-lavoro">
+      <div class="lav-eti">Comandi disponibili — tocca per inserire</div>
+      <div id="chips"></div>
+      <div class="lav-eti">Il tuo programma</div>
+      <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+        aria-label="Editor del programma"></textarea>
+      <div class="lav-btns">
+        <button id="btn-esegui" onclick="esegui()">Esegui</button>
+        <button id="btn-rientra" onclick="rientra()">&#8677; Rientra</button>
+        <span id="conta-righe"></span>
+      </div>
+      <div id="errore" class="hidden" role="alert"></div>
+      <div id="esiti"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VITTORIA ============ -->
+<div id="vittoria" class="hidden">
+  <div class="vitt-card">
+    <svg class="sigillo" aria-hidden="true"><use href="#svg-sigillo"/></svg>
+    <div class="vitt-titolo">Dispaccio sigillato</div>
+    <div class="vitt-sotto" id="v-sotto"></div>
+    <div class="vitt-btns">
+      <button class="btn-perg" onclick="chiudiVittoria()">Rivedi il programma</button>
+      <button class="btn-oro" id="v-avanti" onclick="avanti()">Prossimo incarico</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===CORE-START=== */
+// ---------- INTERPRETE CIFRA (verificato via simulatore Node) ----------
+var BUILTINS = {
+  scrivi:   { ar: 1, voidCall: true },
+  anteponi: { ar: 1, voidCall: true },
+  sposta:   { ar: 2, voidCall: false },
+  pari:     { ar: 1, voidCall: false },
+  dispari:  { ar: 1, voidCall: false }
+};
+var KEYWORDS = ['for', 'in', 'if'];
+
+function CifraError(msg, line) {
+  var e = new Error(msg);
+  e.cifra = true;
+  e.line = line;
+  return e;
+}
+
+function tokenizeLine(text, lineNum) {
+  var toks = [];
+  var i = 0;
+  while (i < text.length) {
+    var ch = text[i];
+    if (ch === ' ') { i++; continue; }
+    if (ch === ',') { toks.push({ t: 'comma' }); i++; continue; }
+    var m;
+    if ((m = /^-?\d+/.exec(text.slice(i)))) {
+      toks.push({ t: 'num', v: parseInt(m[0], 10) });
+      i += m[0].length; continue;
+    }
+    if ((m = /^[A-Za-z\u00e0\u00e8\u00e9\u00ec\u00f2\u00f9_]+/.exec(text.slice(i)))) {
+      toks.push({ t: 'word', v: m[0] });
+      i += m[0].length; continue;
+    }
+    throw CifraError('Non riconosco il simbolo "' + ch + '"', lineNum);
+  }
+  return toks;
+}
+
+function parseProgram(src) {
+  var raw = src.split('\n');
+  var lines = [];
+  raw.forEach(function (l, idx) {
+    var noTab = l.replace(/\t/g, '  ');
+    if (noTab.trim() === '') return;
+    var indent = noTab.match(/^ */)[0].length;
+    lines.push({ indent: indent, toks: tokenizeLine(noTab.trim(), idx + 1), num: idx + 1 });
+  });
+  if (!lines.length) throw CifraError('Il programma \u00e8 vuoto: scrivi almeno una riga', 1);
+  if (lines[0].indent !== 0) throw CifraError('La prima riga non deve essere rientrata', lines[0].num);
+  var r = parseBlock(lines, 0, 0);
+  if (r[1] < lines.length) {
+    throw CifraError('Rientro inatteso: questa riga non appartiene a nessun "for" o "if"', lines[r[1]].num);
+  }
+  return r[0];
+}
+
+function parseBlock(lines, start, indent) {
+  var stmts = [];
+  var i = start;
+  while (i < lines.length) {
+    var ln = lines[i];
+    if (ln.indent < indent) break;
+    if (ln.indent > indent) {
+      throw CifraError('Rientro inatteso: questa riga non appartiene a nessun "for" o "if"', ln.num);
+    }
+    var r = parseStatement(lines, i);
+    stmts.push(r[0]);
+    i = r[1];
+  }
+  return [stmts, i];
+}
+
+function parseStatement(lines, i) {
+  var ln = lines[i];
+  var toks = ln.toks.slice();
+  var first = toks[0];
+
+  if (first.t === 'word' && first.v === 'for') {
+    toks.shift();
+    var v = toks.shift();
+    if (!v || v.t !== 'word' || KEYWORDS.indexOf(v.v) >= 0 || BUILTINS[v.v]) {
+      throw CifraError('Dopo "for" serve un nome per la lettera, ad esempio: for lettera in messaggio', ln.num);
+    }
+    var inTok = toks.shift();
+    if (!inTok || inTok.t !== 'word' || inTok.v !== 'in') {
+      throw CifraError('Dopo "for ' + v.v + '" serve la parola "in"', ln.num);
+    }
+    var stream = { toks: toks, num: ln.num };
+    var iter = parseExpr(stream);
+    if (stream.toks.length) throw CifraError('Parole di troppo alla fine della riga', ln.num);
+    var rb = parseChildBlock(lines, i, 'for');
+    return [{ k: 'for', v: v.v, iter: iter, body: rb[0], num: ln.num }, rb[1]];
+  }
+
+  if (first.t === 'word' && first.v === 'if') {
+    toks.shift();
+    var stream2 = { toks: toks, num: ln.num };
+    var cond = parseExpr(stream2);
+    if (stream2.toks.length) throw CifraError('Parole di troppo alla fine della riga', ln.num);
+    var rb2 = parseChildBlock(lines, i, 'if');
+    return [{ k: 'if', cond: cond, body: rb2[0], num: ln.num }, rb2[1]];
+  }
+
+  var stream3 = { toks: toks, num: ln.num };
+  var expr = parseExpr(stream3);
+  if (stream3.toks.length) throw CifraError('Parole di troppo alla fine della riga', ln.num);
+  if (expr.t !== 'call' || !BUILTINS[expr.name].voidCall) {
+    throw CifraError('Questa riga calcola qualcosa ma non lo usa: serve "scrivi" o "anteponi"', ln.num);
+  }
+  return [{ k: 'expr', expr: expr, num: ln.num }, i + 1];
+}
+
+function parseChildBlock(lines, i, kw) {
+  var ln = lines[i];
+  var next = lines[i + 1];
+  if (!next || next.indent <= ln.indent) {
+    throw CifraError('Dopo "' + kw + '" serve almeno una riga rientrata (premi Rientra)', ln.num);
+  }
+  return parseBlock(lines, i + 1, next.indent);
+}
+
+function parseExpr(stream) {
+  var tok = stream.toks.shift();
+  if (!tok) throw CifraError('Manca qualcosa alla fine della riga', stream.num);
+  if (tok.t === 'num') return { t: 'num', v: tok.v };
+  if (tok.t === 'comma') throw CifraError('Virgola fuori posto', stream.num);
+  if (KEYWORDS.indexOf(tok.v) >= 0) {
+    throw CifraError('"' + tok.v + '" va all\'inizio della riga', stream.num);
+  }
+  if (BUILTINS[tok.v]) {
+    var ar = BUILTINS[tok.v].ar;
+    var args = [parseExpr(stream)];
+    for (var a = 1; a < ar; a++) {
+      var c = stream.toks.shift();
+      if (!c || c.t !== 'comma') {
+        if (tok.v === 'sposta') {
+          throw CifraError('"sposta" vuole due cose separate da virgola: sposta lettera, 3', stream.num);
+        }
+        throw CifraError('"' + tok.v + '" vuole ' + ar + ' argomenti separati da virgola', stream.num);
+      }
+      args.push(parseExpr(stream));
+    }
+    return { t: 'call', name: tok.v, args: args };
+  }
+  return { t: 'var', name: tok.v };
+}
+
+function runProgram(ast, vars) {
+  var env = {};
+  for (var k in vars) env[k] = vars[k];
+  var state = { out: '', steps: 0 };
+  execBlock(ast, env, state);
+  return state.out;
+}
+
+function execBlock(stmts, env, state) {
+  for (var i = 0; i < stmts.length; i++) execStmt(stmts[i], env, state);
+}
+
+function execStmt(s, env, state) {
+  if (++state.steps > 20000) throw CifraError('Il programma non finisce pi\u00f9: controlla i cicli', s.num);
+  if (s.k === 'for') {
+    var iterable = evalExpr(s.iter, env, s.num);
+    if (typeof iterable !== 'string') {
+      throw CifraError('Dopo "in" serve un messaggio (testo), non un numero', s.num);
+    }
+    var savedVar = env[s.v], savedIdx = env.indice;
+    for (var i = 0; i < iterable.length; i++) {
+      env[s.v] = iterable[i];
+      env.indice = i + 1; // 1-based: la prima lettera e' in posizione 1
+      execBlock(s.body, env, state);
+    }
+    env[s.v] = savedVar; env.indice = savedIdx;
+    return;
+  }
+  if (s.k === 'if') {
+    var c = evalExpr(s.cond, env, s.num);
+    if (typeof c !== 'boolean') {
+      throw CifraError('Dopo "if" serve una domanda: pari indice oppure dispari indice', s.num);
+    }
+    if (c) execBlock(s.body, env, state);
+    return;
+  }
+  evalExpr(s.expr, env, s.num, state);
+}
+
+function evalExpr(e, env, num, state) {
+  if (e.t === 'num') return e.v;
+  if (e.t === 'var') {
+    if (!(e.name in env) || env[e.name] === undefined) {
+      throw CifraError('Non conosco "' + e.name + '". Le parole disponibili sono nel pannello Comandi', num);
+    }
+    return env[e.name];
+  }
+  var args = e.args.map(function (a) { return evalExpr(a, env, num, state); });
+  switch (e.name) {
+    case 'scrivi':
+      if (!state) throw CifraError('"scrivi" non pu\u00f2 stare dentro un calcolo', num);
+      state.out += String(args[0]);
+      return undefined;
+    case 'anteponi':
+      if (!state) throw CifraError('"anteponi" non pu\u00f2 stare dentro un calcolo', num);
+      state.out = String(args[0]) + state.out;
+      return undefined;
+    case 'sposta': {
+      var txt = String(args[0]);
+      var n = args[1];
+      if (typeof n !== 'number') throw CifraError('Il secondo argomento di "sposta" deve essere un numero', num);
+      var r = '';
+      for (var i = 0; i < txt.length; i++) {
+        var c2 = txt.charCodeAt(i);
+        if (c2 >= 65 && c2 <= 90) {
+          r += String.fromCharCode(65 + (((c2 - 65 + n) % 26) + 26) % 26);
+        } else r += txt[i];
+      }
+      return r;
+    }
+    case 'pari':
+      if (typeof args[0] !== 'number') throw CifraError('"pari" vuole un numero, ad esempio: pari indice', num);
+      return args[0] % 2 === 0;
+    case 'dispari':
+      if (typeof args[0] !== 'number') throw CifraError('"dispari" vuole un numero, ad esempio: dispari indice', num);
+      return args[0] % 2 !== 0;
+  }
+}
+
+// ---------- LIVELLI (attesi precalcolati e verificati in Node) ----------
+var ZONE = [
+  { id: 'porta',  nome: 'Porta San Giorgio', icona: 'svg-porta',
+    desc: 'Le basi: leggere e riscrivere i dispacci' },
+  { id: 'mura',   nome: 'Le Mura',           icona: 'svg-mura',
+    desc: 'La cifra di Cesare: spostare le lettere' },
+  { id: 'piazza', nome: 'La Piazza',         icona: 'svg-piazza',
+    desc: 'Trasposizioni: decidere con if e indice' },
+  { id: 'rocca',  nome: 'La Rocca',          icona: 'svg-rocca',
+    desc: 'Cifre composte e crittanalisi' }
+];
+
+var LEVELS = [
+  { id: 1, zona: 0, nome: 'Il giuramento', par: 2,
+    testo: 'Benvenuto alla cancelleria, apprendista. Prima di cifrare devi saper <em>copiare</em>: ogni dispaccio passa lettera per lettera sotto la tua penna. Ordina al programma di leggere il messaggio e riscriverlo identico.',
+    nuovo: '<div class="eti">Nuovi comandi</div><p><code>for lettera in messaggio</code> ripete le righe rientrate per ogni lettera del messaggio, una alla volta. <code>scrivi lettera</code> aggiunge la lettera al dispaccio in uscita.</p>',
+    tests: [
+      { messaggio: 'FEDELI ALLA SERENISSIMA', atteso: 'FEDELI ALLA SERENISSIMA' },
+      { messaggio: 'ORZINUOVI', atteso: 'ORZINUOVI' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi lettera'] },
+
+  { id: 2, zona: 0, nome: 'Lo specchio', par: 2,
+    testo: 'Le spie milanesi leggono da sinistra a destra, come tutti. Noi consegneremo il messaggio <em>al contrario</em>. Non serve girarlo a mano: basta mettere ogni lettera davanti a quelle gi\u00e0 scritte, invece che in coda.',
+    nuovo: '<div class="eti">Nuovo comando</div><p><code>anteponi lettera</code> mette la lettera <em>davanti</em> al dispaccio in uscita. La prima lettera finisce in fondo, l\u2019ultima in testa: il messaggio si rovescia da solo.</p>',
+    tests: [
+      { messaggio: 'ROCCA', atteso: 'ACCOR' },
+      { messaggio: 'SERENISSIMA', atteso: 'AMISSINERES' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi lettera', 'anteponi lettera'] },
+
+  { id: 3, zona: 1, nome: 'Il passo del soldato', par: 2,
+    testo: 'Mille e cinquecento anni fa Giulio Cesare cifrava gli ordini spostando ogni lettera di <em>tre passi avanti</em> nell\u2019alfabeto: la A diventa D, la B diventa E. Dopo la Z si ricomincia dalla A. Gli spazi restano fermi.',
+    nuovo: '<div class="eti">Nuovo comando</div><p><code>sposta lettera, 3</code> restituisce la lettera spostata di 3 posti nell\u2019alfabeto. Il risultato va consegnato a <code>scrivi</code>.</p>',
+    tests: [
+      { messaggio: 'VIVERI ALLE MURA', atteso: 'YLYHUL DOOH PXUD' },
+      { messaggio: 'ROCCA SICURA', atteso: 'URFFD VLFXUD' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi lettera', 'anteponi lettera', 'sposta lettera, 3'] },
+
+  { id: 4, zona: 1, nome: 'Tornare indietro', par: 2,
+    testo: '\u00c8 arrivato un dispaccio cifrato da Venezia con il passo del soldato. Per leggerlo devi far fare alle lettere <em>tre passi indietro</em>: i numeri negativi esistono anche nell\u2019alfabeto.',
+    nuovo: '<div class="eti">Da ricordare</div><p>Cifrare e decifrare sono la stessa operazione con segno opposto: <code>sposta lettera, -3</code> annulla <code>sposta lettera, 3</code>.</p>',
+    tests: [
+      { messaggio: 'ULQIRUCL LQ DUULYR', atteso: 'RINFORZI IN ARRIVO' },
+      { messaggio: 'SRQWH VXO ILXPH RJOLR', atteso: 'PONTE SUL FIUME OGLIO' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi lettera', 'sposta lettera, -3'] },
+
+  { id: 5, zona: 1, nome: 'La chiave del capitano', par: 2,
+    testo: 'Il capitano della guarnigione cambia la chiave ogni settimana. Il tuo programma <em>non deve sapere</em> quanto vale: deve funzionare con qualunque numero. Verr\u00e0 provato con tre chiavi diverse \u2014 se scrivi un numero fisso, almeno una prova fallir\u00e0.',
+    nuovo: '<div class="eti">Nuova parola</div><p><code>chiave</code> contiene il numero segreto della settimana. Usala al posto del numero: <code>sposta lettera, chiave</code>.</p>',
+    tests: [
+      { messaggio: 'POLVERE DA SPARO', chiave: 5, atteso: 'UTQAJWJ IF XUFWT' },
+      { messaggio: 'POLVERE DA SPARO', chiave: 11, atteso: 'AZWGPCP OL DALCZ' },
+      { messaggio: 'TORRE DI GUARDIA', chiave: 8, atteso: 'BWZZM LQ OCIZLQI' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi lettera', 'sposta lettera, chiave', 'chiave'] },
+
+  { id: 6, zona: 2, nome: 'Salta la sentinella', par: 3,
+    testo: 'Una nostra spia ha infilato una lettera <em>falsa</em> dopo ogni lettera vera, per confondere chi intercetta. Le lettere vere stanno nelle posizioni dispari: la 1\u00aa, la 3\u00aa, la 5\u00aa\u2026 Recupera solo quelle.',
+    nuovo: '<div class="eti">Nuovi comandi</div><p><code>indice</code> dice a che posizione sei dentro il ciclo: vale 1 sulla prima lettera, 2 sulla seconda\u2026 <code>if dispari indice</code> esegue le righe rientrate solo quando la posizione \u00e8 dispari.</p>',
+    tests: [
+      { messaggio: 'SXOQCKCZOPRMSVO', atteso: 'SOCCORSO' },
+      { messaggio: 'AKLBLDEPRGTQA', atteso: 'ALLERTA' }
+    ],
+    chips: ['for lettera in messaggio', 'if dispari indice', 'if pari indice', 'scrivi lettera', 'indice'] },
+
+  { id: 7, zona: 2, nome: 'Lo steccato', par: 6,
+    testo: 'La cifra dello steccato non cambia le lettere: le <em>rimescola</em>. Si scrivono prima tutte le lettere in posizione dispari, poi si torna all\u2019inizio e si scrivono quelle in posizione pari. Due passaggi sullo stesso messaggio, come due assi di uno steccato.',
+    nuovo: '<div class="eti">Da ricordare</div><p>Puoi scrivere <em>due</em> cicli <code>for</code>, uno dopo l\u2019altro: il secondo ricomincia dalla prima lettera.</p>',
+    tests: [
+      { messaggio: 'TESORO', atteso: 'TSREOO' },
+      { messaggio: 'CANNONI', atteso: 'CNOIANN' }
+    ],
+    chips: ['for lettera in messaggio', 'if dispari indice', 'if pari indice', 'scrivi lettera'] },
+
+  { id: 8, zona: 3, nome: 'Doppia mandata', par: 2,
+    testo: 'Siamo alla Rocca: qui una cifra sola non basta pi\u00f9. Sposta ogni lettera con la chiave <em>e</em> rovescia il messaggio \u2014 due serrature, una sola riga dentro il ciclo. Chi vuole leggere dovr\u00e0 aprirle entrambe, nell\u2019ordine giusto.',
+    nuovo: '<div class="eti">Da ricordare</div><p>I comandi si compongono: <code>anteponi sposta lettera, chiave</code> prima sposta la lettera, poi la mette davanti.</p>',
+    tests: [
+      { messaggio: 'CONGIURA', chiave: 4, atteso: 'EVYMKRSG' },
+      { messaggio: 'SIGILLO DEL DOGE', chiave: 9, atteso: 'NPXM UNM XUURPRB' }
+    ],
+    chips: ['for lettera in messaggio', 'anteponi sposta lettera, chiave', 'scrivi lettera', 'chiave'] },
+
+  { id: 9, zona: 3, nome: 'Le due chiavi del Doge', par: 6,
+    testo: 'Il Doge usa <em>due chiavi alternate</em>: 3 per le posizioni dispari, 7 per le pari. La stessa lettera si cifra in due modi diversi a seconda di dove si trova: chi prova a contare le frequenze impazzisce. \u00c8 l\u2019antenata della cifra di Vigen\u00e8re.',
+    nuovo: '<div class="eti">Da ricordare</div><p>Dentro lo stesso ciclo puoi mettere due <code>if</code>: uno per le posizioni dispari, uno per le pari.</p>',
+    tests: [
+      { messaggio: 'VELENONELVINO', atteso: 'YLOLQVQLOCLUR' },
+      { messaggio: 'FUGGITESUBITO', atteso: 'IBJNLAHZXILAR' }
+    ],
+    chips: ['for lettera in messaggio', 'if dispari indice', 'if pari indice', 'scrivi sposta lettera, 3', 'scrivi sposta lettera, 7'] },
+
+  { id: 10, zona: 3, nome: 'Il dispaccio del traditore', par: 2,
+    testo: 'Le sentinelle hanno intercettato questo dispaccio diretto a Milano. <em>Non conosciamo la chiave.</em> Ma ogni lingua lascia impronte: osserva il conteggio delle lettere qui sotto e ragiona. Trova lo spostamento giusto, prova, correggi. La Rocca conta su di te.',
+    nuovo: '<div class="eti">Crittanalisi</div><p>Questo \u00e8 il lavoro vero del cifrista: non eseguire una cifra, ma <em>romperla</em>. Ogni tentativo sbagliato ti dice qualcosa. Esistono due spostamenti che funzionano: trovali entrambi e capirai perch\u00e9.</p>',
+    crittanalisi: true,
+    tests: [
+      { messaggio: 'BE MKTWBMHKX TIKBKT ET IHKMT GHKW T FXSSTGHMMX',
+        atteso: 'IL TRADITORE APRIRA LA PORTA NORD A MEZZANOTTE' }
+    ],
+    chips: ['for lettera in messaggio', 'scrivi sposta lettera, -1'] }
+];
+/* ===CORE-END=== */
+
+// ---------- TELEMETRIA (hook vuoto, pronto per Image pixel GET -> Apps Script) ----------
+function telemetria(evento, dati) {
+  // var img = new Image();
+  // img.src = 'https://script.google.com/macros/s/XXX/exec?e=' + evento + '&d=' + encodeURIComponent(JSON.stringify(dati));
+}
+
+// ---------- STATO (in memoria: nessun localStorage, Mac di laboratorio condivisi) ----------
+var completati = {};       // id livello -> righe usate
+var docente = false;
+var corrente = null;       // livello aperto
+var tapLeone = 0, tapTimer = null;
+
+// ---------- NAVIGAZIONE ----------
+function apriMappa() {
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('livello').classList.add('hidden');
+  document.getElementById('vittoria').classList.add('hidden');
+  document.getElementById('mappa').classList.remove('hidden');
+  disegnaMappa();
+}
+
+function sbloccato(lv) {
+  if (docente) return true;
+  if (lv.id === 1) return true;
+  return !!completati[lv.id - 1];
+}
+
+function disegnaMappa() {
+  var cont = document.getElementById('zone-container');
+  cont.innerHTML = '';
+  ZONE.forEach(function (z, zi) {
+    var div = document.createElement('div');
+    div.className = 'zona';
+    div.innerHTML =
+      '<div class="zona-head">' +
+        '<svg aria-hidden="true"><use href="#' + z.icona + '"/></svg>' +
+        '<div><div class="zona-nome">' + z.nome + '</div>' +
+        '<div class="zona-desc">' + z.desc + '</div></div>' +
+        '<div class="zona-linea"></div>' +
+      '</div>';
+    var nodi = document.createElement('div');
+    nodi.className = 'nodi';
+    LEVELS.filter(function (l) { return l.zona === zi; }).forEach(function (lv) {
+      var b = document.createElement('button');
+      var fatto = !!completati[lv.id];
+      var open = sbloccato(lv);
+      b.className = 'nodo' + (fatto ? ' fatto' : '') + (open ? '' : ' bloccato');
+      b.innerHTML = '<span class="num">' + lv.id + '</span>' +
+        (fatto ? '<svg class="mini-sigillo" aria-hidden="true"><use href="#svg-sigillo"/></svg>' : '') +
+        '<span>' + lv.nome + '</span>';
+      if (open) {
+        b.onclick = function () { apriLivello(lv.id); };
+      } else {
+        b.disabled = true;
+        b.setAttribute('aria-label', lv.nome + ' (bloccato)');
+      }
+      nodi.appendChild(b);
+    });
+    div.appendChild(nodi);
+    cont.appendChild(div);
+  });
+}
+
+// sblocco docente: 5 tap sul leone
+document.getElementById('logo-leone').addEventListener('click', function () {
+  tapLeone++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(function () { tapLeone = 0; }, 1600);
+  if (tapLeone >= 5) {
+    docente = true;
+    tapLeone = 0;
+    document.getElementById('badge-docente').classList.remove('hidden');
+    disegnaMappa();
+    telemetria('docente_sblocco', {});
+  }
+});
+
+// ---------- LIVELLO ----------
+function apriLivello(id) {
+  var lv = LEVELS.filter(function (l) { return l.id === id; })[0];
+  if (!lv) return;
+  corrente = lv;
+  document.getElementById('mappa').classList.add('hidden');
+  document.getElementById('splash').classList.add('hidden');
+  document.getElementById('vittoria').classList.add('hidden');
+  document.getElementById('livello').classList.remove('hidden');
+
+  document.getElementById('h-zona').textContent =
+    ZONE[lv.zona].nome + ' \u00b7 incarico ' + lv.id + ' di ' + LEVELS.length;
+  document.getElementById('h-nome').textContent = lv.nome;
+  document.getElementById('d-testo').innerHTML = lv.testo;
+  document.getElementById('d-nuovo').innerHTML = lv.nuovo;
+
+  var t0 = lv.tests[0];
+  document.getElementById('d-input').textContent = t0.messaggio;
+  document.getElementById('d-atteso').textContent = lv.crittanalisi ? '? (un ordine in chiaro, in italiano)' : t0.atteso;
+  document.getElementById('d-chiave').innerHTML =
+    (t0.chiave !== undefined) ? '<span class="chip-spazio"></span><span class="chiave-pill">chiave ' + t0.chiave + '</span>' : '';
+
+  // pannello frequenze (solo crittanalisi)
+  var fp = document.getElementById('freq-pann');
+  if (lv.crittanalisi) {
+    fp.classList.remove('hidden');
+    disegnaFrequenze(t0.messaggio);
+  } else {
+    fp.classList.add('hidden');
+  }
+
+  // chips
+  var chips = document.getElementById('chips');
+  chips.innerHTML = '';
+  lv.chips.forEach(function (c) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = c;
+    b.onclick = function () { inserisci(c); };
+    chips.appendChild(b);
+  });
+
+  var ed = document.getElementById('editor');
+  ed.value = '';
+  document.getElementById('errore').classList.add('hidden');
+  document.getElementById('esiti').innerHTML = '';
+  aggiornaRighe();
+  telemetria('apri_livello', { id: id });
+}
+
+function disegnaFrequenze(msg) {
+  var conta = {};
+  msg.replace(/[A-Z]/g, function (ch) { conta[ch] = (conta[ch] || 0) + 1; return ch; });
+  var voci = Object.keys(conta).map(function (k) { return [k, conta[k]]; })
+    .sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6);
+  var max = voci.length ? voci[0][1] : 1;
+  var html = '';
+  voci.forEach(function (v) {
+    html += '<div class="freq-riga"><span class="freq-lettera">' + v[0] + '</span>' +
+      '<span class="freq-barra" style="width:' + Math.round(v[1] / max * 140) + 'px"></span>' +
+      '<span class="freq-n">' + v[1] + '</span></div>';
+  });
+  document.getElementById('freq-righe').innerHTML = html;
+}
+
+// ---------- EDITOR ----------
+function inserisci(testo) {
+  var ed = document.getElementById('editor');
+  var s = ed.selectionStart, e = ed.selectionEnd;
+  var prima = ed.value.slice(0, s);
+  var pre = (prima === '' || prima.slice(-1) === '\n' || prima.slice(-1) === ' ') ? '' : '\n';
+  // i blocchi if/scrivi/anteponi dentro un for vanno rientrati: lascio la scelta allo studente
+  var ins = pre + testo;
+  ed.value = prima + ins + ed.value.slice(e);
+  var pos = s + ins.length;
+  ed.setSelectionRange(pos, pos);
+  ed.focus();
+  aggiornaRighe();
+}
+
+function rientra() {
+  var ed = document.getElementById('editor');
+  var s = ed.selectionStart;
+  // rientra l'inizio della riga corrente
+  var inizio = ed.value.lastIndexOf('\n', s - 1) + 1;
+  ed.value = ed.value.slice(0, inizio) + '  ' + ed.value.slice(inizio);
+  ed.setSelectionRange(s + 2, s + 2);
+  ed.focus();
+}
+
+document.getElementById('editor').addEventListener('keydown', function (ev) {
+  var ed = this;
+  if (ev.key === 'Tab') {
+    ev.preventDefault();
+    var s = ed.selectionStart, e = ed.selectionEnd;
+    ed.value = ed.value.slice(0, s) + '  ' + ed.value.slice(e);
+    ed.setSelectionRange(s + 2, s + 2);
+    return;
+  }
+  if (ev.key === 'Enter') {
+    ev.preventDefault();
+    var s2 = ed.selectionStart;
+    var inizio = ed.value.lastIndexOf('\n', s2 - 1) + 1;
+    var riga = ed.value.slice(inizio, s2);
+    var indent = riga.match(/^ */)[0];
+    var extra = /^\s*(for|if)\b/.test(riga) ? '  ' : '';
+    var ins = '\n' + indent + extra;
+    ed.value = ed.value.slice(0, s2) + ins + ed.value.slice(ed.selectionEnd);
+    var pos = s2 + ins.length;
+    ed.setSelectionRange(pos, pos);
+  }
+});
+document.getElementById('editor').addEventListener('input', aggiornaRighe);
+
+function righeUsate() {
+  return document.getElementById('editor').value.split('\n')
+    .filter(function (r) { return r.trim() !== ''; }).length;
+}
+function aggiornaRighe() {
+  var n = righeUsate();
+  document.getElementById('conta-righe').textContent =
+    n + (n === 1 ? ' riga' : ' righe') + ' \u00b7 Bartolomeo: ' + (corrente ? corrente.par : '-');
+}
+
+// ---------- ESECUZIONE ----------
+function esegui() {
+  if (!corrente) return;
+  var src = document.getElementById('editor').value;
+  var errBox = document.getElementById('errore');
+  var esiti = document.getElementById('esiti');
+  errBox.classList.add('hidden');
+  esiti.innerHTML = '';
+
+  var ast;
+  try {
+    ast = parseProgram(src);
+  } catch (e) {
+    mostraErrore(e);
+    telemetria('errore', { id: corrente.id, msg: e.message, riga: e.line });
+    return;
+  }
+
+  var tuttiOk = true;
+  for (var i = 0; i < corrente.tests.length; i++) {
+    var t = corrente.tests[i];
+    var out;
+    try {
+      out = runProgram(ast, { messaggio: t.messaggio, chiave: t.chiave });
+    } catch (e2) {
+      mostraErrore(e2);
+      telemetria('errore', { id: corrente.id, msg: e2.message, riga: e2.line });
+      return;
+    }
+    var ok = out === t.atteso;
+    if (!ok) tuttiOk = false;
+    var div = document.createElement('div');
+    div.className = 'esito' + (ok ? ' ok' : '');
+    div.innerHTML =
+      '<span class="et">Prova ' + (i + 1) +
+      (t.chiave !== undefined ? ' \u00b7 chiave ' + t.chiave : '') + '</span><br>' +
+      'in&nbsp;&nbsp;: ' + t.messaggio + '<br>' +
+      'out : ' + (out === '' ? '(vuoto)' : out) + '<br>' +
+      (ok
+        ? '<span class="res-ok"><svg aria-hidden="true"><use href="#svg-ok"/></svg>Dispaccio corretto</span>'
+        : '<span class="res-no"><svg aria-hidden="true"><use href="#svg-penna"/></svg>Ancora al lavoro \u2014 atteso: ' +
+          (corrente.crittanalisi ? 'un testo sensato in italiano' : t.atteso) + '</span>');
+    esiti.appendChild(div);
+  }
+
+  if (tuttiOk) {
+    var n = righeUsate();
+    completati[corrente.id] = n;
+    telemetria('completato', { id: corrente.id, righe: n });
+    var sotto;
+    if (n <= corrente.par) {
+      sotto = 'Cifra del maestro: <strong>' + n + (n === 1 ? ' riga' : ' righe') + '</strong>. Messer Bartolomeo appone il sigillo senza una parola \u2014 il suo modo di dire bravo.';
+    } else {
+      sotto = 'Sigillato in <strong>' + n + ' righe</strong>. Bartolomeo lo avrebbe scritto in ' + corrente.par + ': il dispaccio parte comunque, ma se vuoi puoi tentare una cifra pi\u00f9 elegante.';
+    }
+    if (corrente.crittanalisi) {
+      sotto += '<br><br>Hai rotto la cifra senza conoscere la chiave: questo \u00e8 il mestiere del crittanalista. E hai scoperto che nell\u2019alfabeto spostarsi indietro di 19 o avanti di 7 \u00e8 la stessa cosa.';
+    }
+    document.getElementById('v-sotto').innerHTML = sotto;
+    var ultimo = corrente.id === LEVELS.length;
+    document.getElementById('v-avanti').textContent = ultimo ? 'Torna alla mappa' : 'Prossimo incarico';
+    document.getElementById('vittoria').classList.remove('hidden');
+  }
+}
+
+function mostraErrore(e) {
+  var box = document.getElementById('errore');
+  box.innerHTML = '<div class="err-riga">La penna si \u00e8 fermata' +
+    (e.line ? ' alla riga ' + e.line : '') + '</div>' + e.message;
+  box.classList.remove('hidden');
+}
+
+function chiudiVittoria() {
+  document.getElementById('vittoria').classList.add('hidden');
+}
+function avanti() {
+  document.getElementById('vittoria').classList.add('hidden');
+  if (corrente && corrente.id < LEVELS.length) {
+    apriLivello(corrente.id + 1);
+  } else {
+    apriMappa();
+  }
+}
+
+// ---------- AVVIO ----------
+(function () {
+  var m = /[?&]livello=(\d+)/.exec(location.search);
+  if (m) {
+    var id = parseInt(m[1], 10);
+    if (id >= 1 && id <= LEVELS.length) {
+      docente = true; // accesso diretto = uso guidato dal docente
+      document.getElementById('splash').classList.add('hidden');
+      apriLivello(id);
+    }
+  }
+})();
+</script>
+</body>
+</html>
